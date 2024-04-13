@@ -6,6 +6,12 @@ const addTaskBtn = $('.btn');
 const modal = $('.modal');
 const saveBtn = $('.save-btn');
 
+const tStatus = {
+    todo: 'to-do';
+    prog: 'in-progress',
+    done: 'done',
+}
+
 // Todo: create a function to generate a unique task id....done
 function generateTaskId() {
     return keyGenerator(new Date());
@@ -14,7 +20,15 @@ function generateTaskId() {
 // Todo: create a function to create a task card....need help with this functionz (need to use dayjs)
 // Function needs to: retrieve the string of data from local storage(userTasks), parse the string into an object
 saveBtn.on('click', function createTaskCard(task) {
-    console.log(),
+    let cardData = {
+        class: '',
+        id: task.id,
+        status: task.status,
+    }
+    let card = generateElement("div", cardData);
+    const now = dayjs(new Date);
+    const dueDate = dayjs(task.duedate);
+    const deltaTime = dueDate.diff(now, 'day');
     const stringCard = localStorage.getItem('userTasks')
     const newCards = JSON.parse(stringCard);
     const placement = $('#todo-cards');
@@ -32,7 +46,7 @@ saveBtn.on('click', function createTaskCard(task) {
     }
   
 }),
-// function needs to retrieve string, parse into object, object(formData) into an array with title, desc, due date
+// need to retrieve string, parse into object, object(formData) into an array with title, desc, due date
     saveBtn.on('click', function () {
     let stringTasks = localStorage.getItem('userTasks');
     let userTasks = JSON.parse(stringTasks) || [];
@@ -44,29 +58,65 @@ saveBtn.on('click', function createTaskCard(task) {
     };
 // push formData object into userTask array back into local storage
     userTasks.push(formData);
-    localStorage.setItem('userTasks', JSON.stringify(userTasks));
+        localStorage.setItem('userTasks', JSON.stringify(userTasks));
+        return card;
 });
    
 
-// Todo: create a function to render the task list and make cards draggable
-function renderTaskList() {
-    // calls creating the task card
-    renderTaskList(tasks);
-    // makes it draggable and droppable
-    $(function) {
-        $("draggable").draggable();
+// Todo: create a function to render the task list and make cards draggable/sortable
+function renderTaskList() { 
+    // should get tasks from storage
+    let tasks = getItem('tasks');
+    if (!tasks || tasks.length == 0) {
+        return;
     }
-}
+    // we need to get the card sections we want to append to card based on status
+    // need to be drop/draggable
+    const todo = $("#todo-cards").empty().sortable();
+    const inProgress = $("#in-progess-cards").empty().sortable();
+    const done = $("#done-cards").empty().sortable();
+
+    tasks.forEah(task => {
+        let card = creatTaskCard(task);
+        card.draggable({
+            containment: '#taskboard',
+            revert: "invalid",
+            snap: true,
+            snapMode: "inner",
+        });
+        
+    // switch handles which card task will attach to
+    switch (task.status) {
+        case tStatus.todo:
+            todo.append(card);
+            break;
+        case tStatus.prog:
+            inProgress.append(card);
+            break;
+        case tStatus.done:
+            done.append(card);
+            break;
+        default:
+            break;
+    }
+// need to make handles drop and draggable 
+    }
+
+
 
 // Todo: create a function to handle adding a new task
+// get their values from user input
 function handleAddTask(event){
-    renderTaskList()
+    event.preventDefault();
     let task = {
-        name: "Task Title",
-        Description: 'Description';
+        title: $("#task-title").val(),
+        dueDate: $("#task-due-date").val(),
+        description: $("task-description").val(),
+        id: generateTaskId(),
+        // new task will have its status set to todo by default
+        status: sStatus.todo,
  }
 }
-    createTaskCard(task);
 // Todo: create a function to handle deleting a task
 function handleDeleteTask(event){
     let taskCard = event.target.closet('.task-card');
@@ -90,7 +140,7 @@ function handleDrop(event, ui) {
 
 // Todo: when the page loads, render the task list, add event listeners, make lanes droppable, and make the due date field a date picker
 $(document).ready(function () {
-    $('#add-task-btn').onClick('click', handleAddTask);
+    $('#add-task-btn').on('click', handleAddTask);
     renderTaskList();
 });
 
